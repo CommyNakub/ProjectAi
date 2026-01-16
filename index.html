@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>สมุดบัญชี - Soft Dark Edition</title>
+    <title>สมุดบัญชี</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -70,14 +70,37 @@
             font-weight: 400 !important;
             transition: border-color 0.3s ease;
         }
+
+        /* บังคับไม่ให้ Autofill เปลี่ยนสีพื้นหลังของ Input */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #2a2a2a inset !important; /* สีเทาเข้มเดียวกับ .input-style */
+            -webkit-text-fill-color: white !important; /* บังคับสีตัวอักษรเป็นสีขาว */
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* กรณีหน้า รายจ่าย ให้ตัวเลขเป็นสีแดงตามเดิมแม้จะเป็น Autofill */
+        #expAmount:-webkit-autofill {
+            -webkit-text-fill-color: #fb7185 !important;
+        }
+
+        /* กรณีหน้า รายรับ ให้ตัวเลขเป็นสีเขียวตามเดิมแม้จะเป็น Autofill */
+        #incAmount:-webkit-autofill {
+            -webkit-text-fill-color: #4fd1c5 !important;
+        }
         
         .input-style::placeholder { font-weight: 400 !important; opacity: 0.6; }
-        .input-style:focus { border-color: var(--theme-color); outline: none; background: #333; }
+        .input-style:focus { border-color: #555; outline: none; background: #333; }
         
         #form-expense .input-style:focus {
-            border-color: #555555 !important;
+            border-color: var(--border-soft) !important;
             border-width: 1px !important;
         }
+
+        /* เพิ่มคลาสสีแดงเข้มสำหรับข้อความแจ้งเตือนความผิดพลาด */
+        .text-error-heavy { color: #dc2626 !important; font-weight: 600; }
 
         .input-error { border-color: var(--rose) !important; color: var(--rose) !important; }
 
@@ -85,7 +108,6 @@
         .btn-action:active { transform: scale(0.96); }
         .btn-disabled { opacity: 0.2; cursor: not-allowed; pointer-events: none; }
 
-        /* อนิเมชั่นสำหรับเพิ่มรายการใหม่เท่านั้น */
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -95,6 +117,10 @@
 
         @media (max-width: 380px) {
             .balance-text { font-size: 2.2rem; }
+            .input-style#incAmount::placeholder, 
+            .input-style#expAmount::placeholder {
+                content: "จำนวนเงิน (สูงสุด 2แสน)";
+            }
         }
     </style>
 </head>
@@ -131,10 +157,10 @@
                 <div id="budget-input-area" class="hidden mt-4 p-4 bg-black/20 rounded-2xl border border-white/5 fade-in">
                     <div class="flex flex-col gap-2">
                         <div class="flex flex-wrap sm:flex-nowrap gap-2 budget-controls">
-                            <input type="text" id="budgetInput" oninput="validateInput(this, 'btn-confirm-budget', 'error-budget')" placeholder="ระบุได้สูงสุด 200,000 บาท" class="input-style flex-1 py-2 text-sm min-w-0">
+                            <input type="text" id="budgetInput" oninput="validateNumericInput(this, 'btn-confirm-budget', 'error-budget')" placeholder="สูงสุด 200,000 บาท" class="input-style flex-1 py-2 text-sm min-w-0">
                             <button id="btn-confirm-budget" onclick="confirmBudget()" class="bg-teal-400 text-black px-5 py-2 rounded-xl font-bold text-sm btn-action theme-transition">บันทึก</button>
                         </div>
-                        <p id="error-budget" class="text-[10px] text-rose-400 hidden text-right">* วงเงินต้องไม่เกิน 200,000</p>
+                        <p id="error-budget" class="text-[12px] text-error-heavy hidden text-right">* ตั้งได้ไม่เกิน 200,000 บาท</p>
                     </div>
                 </div>
             </div>
@@ -149,21 +175,21 @@
             <div id="form-income" class="space-y-4 fade-in">
                 <input type="text" id="incDesc" placeholder="ชื่อรายการ" class="input-style w-full border-zinc-700">
                 <div>
-                    <input type="text" id="incAmount" oninput="validateInput(this, 'btn-save-inc', 'error-inc')" placeholder="จำนวนเงิน (กรอกได้ไม่เกิน 200,000 บาท)" class="input-style w-full text-teal-400 border-zinc-700">
-                    <p id="error-inc" class="text-[12px] text-rose-400 hidden mt-1.5 ml-1">* กรอกได้ไม่เกิน 200,000 บาท</p>
+                    <input type="text" id="incAmount" oninput="validateNumericInput(this, 'btn-save-inc', 'error-inc')" placeholder="จำนวนเงิน (ไม่เกิน 200,000)" class="input-style w-full text-teal-400 border-zinc-700">
+                    <p id="error-inc" class="text-[12px] text-error-heavy hidden mt-1.5 ml-1">* กรอกได้ไม่เกิน 200,000 บาท</p>
                 </div>
-                <input type="text" id="incNote" placeholder="คำอธิบาย" class="input-style w-full py-2 text-sm opacity-60 border-zinc-700">
+                <input type="text" id="incNote" placeholder="คำอธิบาย (เพิ่มเติม)" class="input-style w-full border-zinc-700">
                 <button id="btn-save-inc" onclick="addTransaction('income')" class="btn-action w-full bg-teal-400 py-3.5 rounded-xl text-black font-bold text-base theme-transition">บันทึกรายรับ</button>
             </div>
 
             <div id="form-expense" class="space-y-4 hidden fade-in">
                 <input type="text" id="expDesc" placeholder="ชื่อรายการ" class="input-style w-full border-zinc-700">
                 <div>
-                    <input type="text" id="expAmount" oninput="validateInput(this, 'btn-save-exp', 'error-exp')" placeholder="จำนวนเงิน (กรอกได้ไม่เกิน 200,000 บาท)" class="input-style w-full text-rose-400 border-zinc-700">
-                    <p id="error-exp" class="text-[12px] text-rose-400 hidden mt-1.5 ml-1">* กรอกได้ไม่เกิน 200,000 บาท</p>
+                    <input type="text" id="expAmount" oninput="validateNumericInput(this, 'btn-save-exp', 'error-exp')" placeholder="จำนวนเงิน (ไม่เกิน 200,000)" class="input-style w-full text-rose-400 border-zinc-700">
+                    <p id="error-exp" class="text-[12px] text-error-heavy hidden mt-1.5 ml-1">* กรอกได้ไม่เกิน 200,000 บาท</p>
                 </div>
-                <input type="text" id="expNote" placeholder="คำอธิบาย" class="input-style w-full py-2 text-sm opacity-60 border-zinc-700">
-                <button id="btn-save-exp" onclick="addTransaction('expense')" class="btn-action w-full bg-rose-500 py-3.5 rounded-xl text-white text-base theme-transition">บันทึกรายจ่าย</button>
+                <input type="text" id="expNote" placeholder="คำอธิบาย (เพิ่มเติม)" class="input-style w-full border-zinc-700">
+                <button id="btn-save-exp" onclick="addTransaction('expense')" class="btn-action w-full bg-rose-500 py-3.5 rounded-xl text-white font-bold text-base theme-transition">บันทึกรายจ่าย</button>
             </div>
         </div>
 
@@ -180,13 +206,25 @@
         let currentBudget = parseFloat(localStorage.getItem('budget')) || 0;
         const LIMIT = 200000;
 
-        function validateInput(input, btnId, errorId) {
-            input.value = input.value.replace(/[^0-9.]/g, '');
-            if ((input.value.match(/\./g) || []).length > 1) input.value = input.value.replace(/\.+$/, "");
-            const val = parseFloat(input.value);
+        function formatNumberWithCommas(value) {
+            let cleanVal = value.replace(/[^0-9.]/g, '');
+            if ((cleanVal.match(/\./g) || []).length > 1) {
+                cleanVal = cleanVal.replace(/\.+$/, "");
+            }
+            if (cleanVal === "") return "";
+            const parts = cleanVal.split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            return parts.join('.');
+        }
+
+        function validateNumericInput(input, btnId, errorId) {
+            const rawVal = input.value.replace(/,/g, '');
+            const numericVal = parseFloat(rawVal);
+            input.value = formatNumberWithCommas(input.value);
             const btn = document.getElementById(btnId);
             const errorMsg = document.getElementById(errorId);
-            if (val > LIMIT) {
+
+            if (numericVal > LIMIT) {
                 input.classList.add('input-error'); btn.classList.add('btn-disabled');
                 errorMsg.classList.remove('hidden');
             } else {
@@ -195,17 +233,20 @@
             }
         }
 
+        function getCleanValue(id) {
+            return parseFloat(document.getElementById(id).value.replace(/,/g, '')) || 0;
+        }
+
         function showBudgetInput() { document.getElementById('budget-input-area').classList.toggle('hidden'); }
 
         function confirmBudget() {
-            const input = document.getElementById('budgetInput');
-            const val = parseFloat(input.value) || 0;
+            const val = getCleanValue('budgetInput');
             if(val > LIMIT) return;
             currentBudget = val;
             localStorage.setItem('budget', currentBudget);
             document.getElementById('budget-input-area').classList.add('hidden');
-            input.value = "";
-            updateUI(false); // Update UI without re-rendering list
+            document.getElementById('budgetInput').value = "";
+            updateUI(false);
         }
 
         function toggleTab(type) {
@@ -216,6 +257,7 @@
             const brandAccent = document.getElementById('brand-accent');
             const btnEditBudget = document.getElementById('btn-edit-budget');
             const budgetPercent = document.getElementById('budgetPercent');
+            const btnConfirmBudget = document.getElementById('btn-confirm-budget');
 
             if (type === 'inc') {
                 document.body.classList.remove('expense-mode');
@@ -225,6 +267,9 @@
                 btnEditBudget.classList.replace('text-rose-400', 'text-teal-400');
                 budgetPercent.className = 'text-teal-400 font-bold theme-transition';
                 formInc.classList.remove('hidden'); formExp.classList.add('hidden');
+                
+                // คืนค่าปุ่มบันทึกวงเงินเป็นสีเขียว
+                btnConfirmBudget.className = 'bg-teal-400 text-black px-5 py-2 rounded-xl font-bold text-sm btn-action theme-transition';
             } else {
                 document.body.classList.add('expense-mode');
                 tabExp.className = 'btn-action py-3.5 rounded-2xl font-bold text-base bg-rose-500 text-white shadow-lg shadow-rose-900/10 theme-transition';
@@ -233,27 +278,30 @@
                 btnEditBudget.classList.replace('text-teal-400', 'text-rose-400');
                 budgetPercent.className = 'text-rose-400 font-bold theme-transition';
                 formExp.classList.remove('hidden'); formInc.classList.add('hidden');
+                
+                // เปลี่ยนปุ่มบันทึกวงเงินเป็นสีแดง (เมื่ออยู่ในหน้าจ่าย)
+                btnConfirmBudget.className = 'bg-rose-500 text-white px-5 py-2 rounded-xl font-bold text-sm btn-action theme-transition';
             }
-            // สำคัญ: เรียกเฉพาะส่วนที่ต้องเปลี่ยนสี แต่ไม่เรียก updateList เพื่อให้ "รายการล่าสุด" ไม่ขยับ
             updateStatsOnly();
         }
 
         function addTransaction(type) {
             const desc = type === 'income' ? document.getElementById('incDesc') : document.getElementById('expDesc');
-            const amountInput = type === 'income' ? document.getElementById('incAmount') : document.getElementById('expAmount');
-            const noteInput = type === 'income' ? document.getElementById('incNote') : document.getElementById('expNote');
-            const amountVal = parseFloat(amountInput.value);
+            const amountId = type === 'income' ? 'incAmount' : 'expAmount';
+            const note = type === 'income' ? document.getElementById('incNote') : document.getElementById('expNote');
+            const amountVal = getCleanValue(amountId);
             if (!desc.value || isNaN(amountVal) || amountVal <= 0 || amountVal > LIMIT) return;
+            
             transactions.unshift({
                 id: Date.now(),
                 text: desc.value,
                 amount: type === 'income' ? amountVal : -amountVal,
-                note: noteInput.value,
+                note: note.value,
                 date: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
             });
             localStorage.setItem('transactions', JSON.stringify(transactions));
-            desc.value = ''; amountInput.value = ''; noteInput.value = '';
-            updateUI(true); // เฉพาะตอนเพิ่มรายการใหม่ถึงจะให้รีโหลด List พร้อมอนิเมชั่น
+            desc.value = ''; document.getElementById(amountId).value = ''; note.value = '';
+            updateUI(true);
         }
 
         function removeTransaction(id) {
@@ -270,7 +318,6 @@
             updateUI(true);
         }
 
-        // ฟังก์ชันอัปเดตตัวเลขและสีเท่านั้น (ไม่ยุ่งกับ List รายการ)
         function updateStatsOnly() {
             const total = transactions.reduce((acc, item) => acc + item.amount, 0);
             const expenseTotal = Math.abs(transactions.filter(t => t.amount < 0).reduce((acc, t) => acc + t.amount, 0));
@@ -297,7 +344,6 @@
         function updateUI(shouldRenderList = true) {
             updateStatsOnly();
             if (!shouldRenderList) return;
-
             const list = document.getElementById('list');
             list.innerHTML = '';
             document.getElementById('txCount').innerText = `${transactions.length} รายการ`;
